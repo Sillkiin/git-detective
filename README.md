@@ -69,6 +69,7 @@ any repo per question. Restart your client and ask: *"Give me a repo_overview."*
 | **`recent_activity`** | "What changed in the last 2 weeks? Write me a standup / release note." |
 | **`file_history`** | "Why does this file look like this? Who's touched it and when?" |
 | **`search_commits`** | "Who removed the retry logic last month?" (message, author, date, or code pickaxe) |
+| **`commit_detail`** | "Show me exactly what commit a1b2c3 changed, and its full message." |
 | **`hotspots`** | "Which files are riskiest — changed so often they concentrate bugs?" |
 | **`change_coupling`** | "Which files secretly change together and reveal hidden dependencies?" |
 | **`ownership`** | "Who owns this directory, and what's the bus-factor if they leave?" |
@@ -80,6 +81,41 @@ any repo per question. Restart your client and ask: *"Give me a repo_overview."*
 - *"Show me change_coupling. Are any of these pairs in different modules? That's a design smell."*
 - *"Use search_commits with touching_code='TODO' — when did we add the most tech debt?"*
 - *"Trace file_history for src/auth.ts and explain how its responsibilities grew over time."*
+
+## See it in action
+
+Run the narrated walkthrough against any repo (no MCP client needed):
+
+```bash
+npm run build
+npm run demo -- /path/to/any/repo
+```
+
+```
+🕵️  git-detective  —  analyzing /path/to/repo
+
+📊  repo_overview
+────────────────────────────────────────────────────────────
+1,284 commits · 312 files · 14 contributors · 903 days old · branch main
+languages: TypeScript 61%  CSS 12%  Markdown 9%  JSON 7%
+
+🔥  hotspots  — where bugs and complexity concentrate
+────────────────────────────────────────────────────────────
+   84 commits  src/server/router.ts   (2 authors, 4,931 lines)  ⚠ bus-factor 1
+   61 commits  src/db/schema.ts       (5 authors, 2,210 lines)
+   58 commits  src/auth/session.ts    (1 author,  1,803 lines)  ⚠ bus-factor 1
+
+🔗  change_coupling  — files that secretly change together
+────────────────────────────────────────────────────────────
+   92% of the time  src/auth/session.ts ↔ src/db/schema.ts   (53 shared commits)
+
+👤  ownership  — who knows this code, and the bus-factor
+────────────────────────────────────────────────────────────
+  bus-factor 2 · 14 contributors
+```
+
+> Recording a GIF for your own repo:
+> `asciinema rec -c "node scripts/demo.mjs /path/to/repo" demo.cast`, then convert with `agg`.
 
 ## How it works
 
@@ -130,8 +166,8 @@ commit caps, so you can scope big histories. Hotspots/coupling read one `git log
 
 ## Contributing
 
-Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Good first issues: more languages in
-the overview, a `complexity` signal, or a `commit_detail` tool.
+Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). Good first issues: a `complexity`
+signal for hotspots, an `author_activity` tool, or a `stale_files` finder.
 
 ## License
 

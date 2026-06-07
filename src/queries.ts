@@ -7,6 +7,7 @@ import { logCommits, runGit, type Commit } from "./git.js";
 import { computeHotspots, type Hotspot } from "./analysis/hotspots.js";
 import { computeCoupling, type CoupledPair } from "./analysis/coupling.js";
 import { computeOwnership, type OwnershipReport } from "./analysis/ownership.js";
+import { summarizeLanguages, type LanguageStat } from "./analysis/languages.js";
 
 /** Build the shared --since / -n filters used by most queries. */
 function windowArgs(since?: string, maxCommits?: number): string[] {
@@ -25,6 +26,7 @@ export interface RepoOverview {
   ageDays: number;
   contributors: number;
   topContributors: { author: string; commits: number }[];
+  languages: LanguageStat[];
 }
 
 export async function repoOverview(repoPath: string): Promise<RepoOverview> {
@@ -40,16 +42,18 @@ export async function repoOverview(repoPath: string): Promise<RepoOverview> {
   const firstCommit = first.split("\n")[0]?.trim() || "";
   const lastCommit = last.trim();
   const topContributors = parseShortlog(shortlog);
+  const trackedPaths = files.split("\n").filter((l) => l.trim());
 
   return {
     branch: branch.trim(),
     totalCommits: parseInt(count.trim(), 10) || 0,
-    trackedFiles: files.split("\n").filter((l) => l.trim()).length,
+    trackedFiles: trackedPaths.length,
     firstCommit,
     lastCommit,
     ageDays: daysBetween(firstCommit, lastCommit),
     contributors: topContributors.length,
     topContributors: topContributors.slice(0, 10),
+    languages: summarizeLanguages(trackedPaths),
   };
 }
 
@@ -172,6 +176,56 @@ export async function searchCommits(
       subject: c.subject,
       files: c.files.length,
     })),
+  };
+}
+
+export interface CommitDetail {
+  hash: string;
+  author: string;
+  email: string;
+  date: string;
+  subject: string;
+  body: string;
+  filesChanged: number;
+  insertions: number;
+  deletions: number;
+  files: { path: string; added: number; deleted: number }[];
+}
+
+export async function commitDetail(
+  repoPath: string,
+  ref: string
+): Promise<CommitDetail> {
+  if (ref.startsWith("-")) {
+    throw new Error(`Invalid commit reference "${ref}".`);
+  }
+  const [commits, body] = await Promise.all([
+    logCommits(repoPath, ["-1", ref]),
+    runGit(repoPath, ["show", "-s", "--format=%B", ref]),
+  ]);
+  const commit = commits[0];
+  if (!commit) {
+    throw new Error(`Commit "${ref}" not found.`);
+  }
+
+  let insertions = 0;
+  let deletions = 0;
+  for (const f of commit.files) {
+    insertions += Math.max(0, f.added);
+    deletions += Math.max(0, f.deleted);
+  }
+
+  return {
+    hash: commit.hash,
+    author: commit.author,
+    email: commit.email,
+    date: commit.date,
+    subject: commit.subject,
+    body: body.trim(),
+    filesChanged: commit.files.length,
+    insertions,
+    deletions,
+    files: commit.files,
   };
 }
 

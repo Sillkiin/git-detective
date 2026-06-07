@@ -14,6 +14,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/src/index.js",
+    "demo": "node scripts/demo.mjs",
     "test": "tsc && node --test dist/test/*.test.js",
     "prepare": "tsc",
     "prepublishOnly": "npm run build && npm test"

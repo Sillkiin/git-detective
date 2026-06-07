@@ -37,7 +37,8 @@ test/                 unit tests for the parser and analysis
 
 ## Good first issues
 
-- Add detected languages / file-type breakdown to `repo_overview`.
-- Add a `commit_detail` tool (full diff stat + message body for one hash).
-- Add a simple complexity proxy (indentation or line count) to hotspot ranking.
+- Add a simple complexity proxy (indentation depth or line count) to hotspot ranking.
+- Add an `author_activity` tool (commits-over-time sparkline for one contributor).
+- Add a `stale_files` tool (tracked files not changed in N months).
+- Surface coupling directionality (A→B vs B→A confidence) separately.
 - More client setup recipes in `docs/clients.md`.

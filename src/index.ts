@@ -16,6 +16,7 @@ import {
   recentActivity,
   fileHistory,
   searchCommits,
+  commitDetail,
   hotspots,
   coupling,
   ownership,
@@ -129,6 +130,21 @@ server.tool(
         maxCommits: max_commits ?? 50,
       })
     )
+);
+
+server.tool(
+  "commit_detail",
+  "Inspect a single commit in full: author, date, the complete message body, and " +
+    "a per-file breakdown of lines added/removed. Use it to dig into a specific " +
+    "commit surfaced by search_commits, recent_activity, or file_history.",
+  {
+    repo_path: repoPathArg,
+    ref: z
+      .string()
+      .describe("Commit hash or revision (e.g. a SHA, HEAD, HEAD~3, or a tag)."),
+  },
+  async ({ repo_path, ref }) =>
+    withRepo("commit_detail", repo_path, (repo) => commitDetail(repo, ref))
 );
 
 server.tool(
