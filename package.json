@@ -1,0 +1,48 @@
+{
+  "name": "git-detective-mcp",
+  "version": "0.1.0",
+  "description": "Zero-config MCP server that gives Claude, Cursor, and any AI agent deep analytical access to a Git repo — hotspots, change-coupling, code ownership, bus-factor, and file archaeology. No credentials, works on any repo in seconds.",
+  "type": "module",
+  "bin": {
+    "git-detective-mcp": "dist/src/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/src/index.js",
+    "test": "tsc && node --test dist/test/*.test.js",
+    "prepare": "tsc",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "git",
+    "claude",
+    "cursor",
+    "code-archaeology",
+    "code-review",
+    "hotspots",
+    "developer-tools",
+    "ai"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
