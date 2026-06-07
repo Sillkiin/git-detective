@@ -20,6 +20,8 @@ import {
   hotspots,
   coupling,
   ownership,
+  authorActivity,
+  staleFiles,
 } from "./queries.js";
 
 const server = new McpServer({
@@ -189,6 +191,34 @@ server.tool(
   },
   async ({ repo_path, path }) =>
     withRepo("ownership", repo_path, (repo) => ownership(repo, path))
+);
+
+server.tool(
+  "author_activity",
+  "Profile one contributor over time: total commits, active span, files touched, " +
+    "lines added/removed, and a month-by-month commit timeline. Great for " +
+    "understanding who drove what, or summarizing a person's footprint.",
+  {
+    repo_path: repoPathArg,
+    author: z.string().describe("Author name or email substring, e.g. 'ada' or 'ada@x.io'."),
+    since: z.string().optional().describe('Optional window, e.g. "1 year ago". Omit for all time.'),
+  },
+  async ({ repo_path, author, since }) =>
+    withRepo("author_activity", repo_path, (repo) => authorActivity(repo, author, since))
+);
+
+server.tool(
+  "stale_files",
+  "Find tracked files that haven't changed in a long time — candidates for " +
+    "dead code, forgotten config, or docs that have drifted out of date. Returns " +
+    "the oldest-untouched files with how long since each last changed.",
+  {
+    repo_path: repoPathArg,
+    months: z.number().int().min(1).max(120).optional().describe("Staleness threshold in months (default 6)."),
+    limit: z.number().int().min(1).max(200).optional().describe("How many stale files to return (default 25)."),
+  },
+  async ({ repo_path, months, limit }) =>
+    withRepo("stale_files", repo_path, (repo) => staleFiles(repo, months ?? 6, limit ?? 25))
 );
 
 async function main() {

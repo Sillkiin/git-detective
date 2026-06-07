@@ -8,6 +8,12 @@ import { computeHotspots, type Hotspot } from "./analysis/hotspots.js";
 import { computeCoupling, type CoupledPair } from "./analysis/coupling.js";
 import { computeOwnership, type OwnershipReport } from "./analysis/ownership.js";
 import { summarizeLanguages, type LanguageStat } from "./analysis/languages.js";
+import {
+  bucketByMonth,
+  findStaleFiles,
+  type MonthBucket,
+  type StaleFile,
+} from "./analysis/timeline.js";
 
 /** Build the shared --since / -n filters used by most queries. */
 function windowArgs(since?: string, maxCommits?: number): string[] {
@@ -256,6 +262,87 @@ export async function ownership(
   const args = path && path.trim() ? ["--", path] : [];
   const commits = await logCommits(repoPath, args);
   return computeOwnership(commits, scope);
+}
+
+export interface AuthorActivity {
+  author: string;
+  totalCommits: number;
+  firstCommit: string;
+  lastCommit: string;
+  activeMonths: number;
+  filesTouched: number;
+  insertions: number;
+  deletions: number;
+  byMonth: MonthBucket[];
+}
+
+export async function authorActivity(
+  repoPath: string,
+  author: string,
+  since: string | undefined
+): Promise<AuthorActivity> {
+  const args = [`--author=${author}`, ...windowArgs(since)];
+  const commits = await logCommits(repoPath, args);
+  if (commits.length === 0) {
+    throw new Error(`No commits found for author matching "${author}".`);
+  }
+
+  const files = new Set<string>();
+  let insertions = 0;
+  let deletions = 0;
+  for (const c of commits) {
+    for (const f of c.files) {
+      files.add(f.path);
+      insertions += Math.max(0, f.added);
+      deletions += Math.max(0, f.deleted);
+    }
+  }
+  const dates = commits.map((c) => c.date).filter(Boolean).sort();
+  const byMonth = bucketByMonth(commits);
+
+  return {
+    author,
+    totalCommits: commits.length,
+    firstCommit: dates[0] ?? "",
+    lastCommit: dates[dates.length - 1] ?? "",
+    activeMonths: byMonth.length,
+    filesTouched: files.size,
+    insertions,
+    deletions,
+    byMonth,
+  };
+}
+
+export interface StaleReport {
+  cutoff: string; // ISO date; files last changed before this are stale
+  monthsThreshold: number;
+  staleCount: number;
+  files: StaleFile[];
+}
+
+export async function staleFiles(
+  repoPath: string,
+  months: number,
+  limit: number
+): Promise<StaleReport> {
+  const now = new Date();
+  const cutoffDate = new Date(now);
+  cutoffDate.setMonth(cutoffDate.getMonth() - months);
+  const cutoffISO = cutoffDate.toISOString();
+
+  const [tracked, commits] = await Promise.all([
+    runGit(repoPath, ["ls-files"]),
+    logCommits(repoPath, []), // logCommits already includes --numstat (paths + dates)
+  ]);
+  const trackedPaths = new Set(tracked.split("\n").map((l) => l.trim()).filter(Boolean));
+  const files = findStaleFiles(commits, trackedPaths, cutoffISO, now.toISOString(), limit);
+
+  return {
+    cutoff: cutoffISO,
+    monthsThreshold: months,
+    staleCount: files.length,
+    files,
+  };
 }
 
 // --- small shared helpers -------------------------------------------------

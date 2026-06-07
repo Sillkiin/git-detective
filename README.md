@@ -73,6 +73,8 @@ any repo per question. Restart your client and ask: *"Give me a repo_overview."*
 | **`hotspots`** | "Which files are riskiest — changed so often they concentrate bugs?" |
 | **`change_coupling`** | "Which files secretly change together and reveal hidden dependencies?" |
 | **`ownership`** | "Who owns this directory, and what's the bus-factor if they leave?" |
+| **`author_activity`** | "Profile one contributor: footprint, active span, month-by-month timeline." |
+| **`stale_files`** | "Which tracked files haven't changed in months — dead code or drifted docs?" |
 
 ## Example prompts to try
 
@@ -145,7 +147,7 @@ git clone https://github.com/Sillkiin/git-detective.git
 cd git-detective
 npm install
 npm run build
-npm test          # 14 unit tests, no repo required
+npm test          # 22 unit tests, no repo required
 
 # point it at any repo and try a query:
 GIT_DETECTIVE_REPO=/path/to/repo npm start
