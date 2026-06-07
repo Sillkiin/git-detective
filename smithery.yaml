@@ -1,0 +1,25 @@
+# Smithery configuration — https://smithery.ai/docs
+# git-detective is a stdio MCP server distributed on npm, so Smithery can launch
+# it directly with npx. The only optional config is a default repository path.
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      repoPath:
+        type: string
+        description: >-
+          Absolute path to the git repository to analyze by default. Optional —
+          every tool also accepts a repo_path argument, so this is just the
+          fallback when one isn't passed.
+    required: []
+    additionalProperties: false
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', 'git-detective-mcp'],
+      env: config.repoPath ? { GIT_DETECTIVE_REPO: config.repoPath } : {}
+    })
+  exampleConfig:
+    repoPath: /absolute/path/to/your/repo
